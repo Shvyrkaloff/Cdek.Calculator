@@ -1,4 +1,4 @@
-﻿@page "/counter"
+﻿@page "/calculator"
 @using Cdek.Calculator.Services
 @using Cdek.Application.Entities
 @using Newtonsoft.Json
@@ -36,7 +36,15 @@
         <Input @bind-Value="@context.currency" />
     </FormItem>
     <FormItem Label="Код тарифа">
-        <Input @bind-Value="@context.tariff_code" />
+        <Select Mode="default"
+                DataSource="@Tariffs"
+                TItem="TariffsForOnlineStores"
+                TItemValue="int"
+                @bind-Value="@context.tariff_code"
+                LabelName="@nameof(TariffsForOnlineStores.tariff_name)"
+                ValueName="@nameof(TariffsForOnlineStores.code)"
+                IgnoreItemChanges="false">
+        </Select>
     </FormItem>
     <FormItem Label="Адрес отправления" />
     <FormItem Label="Код населенного пункта СДЭК">
@@ -72,7 +80,15 @@
     </FormItem>
     <FormItem Label="Дополнительные услуги" />
     <FormItem Label="Тип дополнительной услуги, код из справочника доп. услуг">
-        <Input @bind-Value="@context.services[0].code" />
+        <Select Mode="default"
+                DataSource="@Services"
+                TItem="Service"
+                TItemValue="string"
+                @bind-Value="@context.services[0].code"
+                LabelName="@nameof(TariffsForOnlineStores.code)"
+                ValueName="@nameof(TariffsForOnlineStores.code)"
+                IgnoreItemChanges="false">
+        </Select>
     </FormItem>
     <FormItem Label="Параметр дополнительной услуги">
         <Input @bind-Value="@context.services[0].parameter" />
@@ -127,6 +143,10 @@
 
     private IEnumerable<OrderType>? AdditionalOrderTypes { get; set; }
 
+    private IEnumerable<TariffsForOnlineStores>? Tariffs { get; set; }
+
+    private IEnumerable<Service>? Services { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         _types = new List<OrderType>
@@ -141,6 +161,114 @@
             new() { Id = 4, Name = "для Forward"},
             new() { Id = 6, Name = "для Фулфилмент. Приход"},
             new() { Id = 7, Name = "для Фулфилмент. Отгрузка}"}
+        };
+        Tariffs = new List<TariffsForOnlineStores>
+        {
+            new() { code = 7, tariff_name = "International express documents door–door" },
+            new() { code = 8, tariff_name = "International express freight door–door" },
+            new() { code = 136, tariff_name = "Warehouse–warehouse parcel" },
+            new() { code = 137, tariff_name = "Warehouse–door parcel" },
+            new() { code = 138, tariff_name = "Door–warehouse parcel" },
+            new() { code = 139, tariff_name = "Door–door parcel" },
+            new() { code = 233, tariff_name = "Economy warehouse–door parcel" },
+            new() { code = 234, tariff_name = "Economy warehouse–warehouse parcel" },
+            new() { code = 291, tariff_name = "E-com Express warehouse-warehouse" },
+            new() { code = 293, tariff_name = "E-com Express door–door" },
+            new() { code = 294, tariff_name = "E-com Express warehouse–door" },
+            new() { code = 295, tariff_name = "E-com Express door–warehouse" },
+            new() { code = 509, tariff_name = "E-com Express door-parcel terminal" },
+            new() { code = 510, tariff_name = "E-com Express warehouse-parcel terminal" },
+            new() { code = 366, tariff_name = "Parcel door-parcel terminal" },
+            new() { code = 368, tariff_name = "Parcel warehouse-parcel terminal" },
+            new() { code = 378, tariff_name = "Economic parcel warehouse-parcel terminal" },
+            new() { code = 184, tariff_name = "E-com Standard door–door" },
+            new() { code = 185, tariff_name = "E-com Standard warehouse–warehouse" },
+            new() { code = 186, tariff_name = "E-com Standard warehouse–door" },
+            new() { code = 187, tariff_name = "E-com Standard door–warehouse" },
+            new() { code = 497, tariff_name = "E-com Standard door-parcel terminal" },
+            new() { code = 498, tariff_name = "E-com Standard warehouse-parcel terminal" },
+            new() { code = 1, tariff_name = "Express lite door–door" },
+            new() { code = 3, tariff_name = "Super express up to 18 kg" },
+            new() { code = 5, tariff_name = "Economy express warehouse–warehouse" },
+            new() { code = 10, tariff_name = "Express lite warehouse-warehouse" },
+            new() { code = 11, tariff_name = "Express lite warehouse–door" },
+            new() { code = 12, tariff_name = "Express lite door–warehouse" },
+            new() { code = 15, tariff_name = "Express heavy warehouse-warehouse" },
+            new() { code = 16, tariff_name = "Express heavy warehouse–door" },
+            new() { code = 17, tariff_name = "Express heavy door–warehouse" },
+            new() { code = 18, tariff_name = "Express heavy door–door" },
+            new() { code = 57, tariff_name = "Super express up to 9 a.m." },
+            new() { code = 58, tariff_name = "Super express up to 10 a.m." },
+            new() { code = 59, tariff_name = "Super express up to 12 p.m." },
+            new() { code = 60, tariff_name = "Super express up to 14 p.m." },
+            new() { code = 61, tariff_name = "Super express up to 16 p.m." },
+            new() { code = 62, tariff_name = "Long-distance express warehouse–warehouse" },
+            new() { code = 121, tariff_name = "Long-distance express дверь-дверь" },
+            new() { code = 122, tariff_name = "Long-distance express склад-дверь" },
+            new() { code = 123, tariff_name = "Long-distance express дверь-склад" },
+            new() { code = 63, tariff_name = "Long-distance super express warehouse-warehouse" },
+            new() { code = 124, tariff_name = "Main super express door–door" },
+            new() { code = 125, tariff_name = "Main super express warehouse–door" },
+            new() { code = 126, tariff_name = "Main super express door–warehouse" },
+            new() { code = 118, tariff_name = "Economy express door–door" },
+            new() { code = 119, tariff_name = "Economy express warehouse–door" },
+            new() { code = 120, tariff_name = "Economy express door–warehouse" },
+            new() { code = 361, tariff_name = "Express lite door-parcel terminal" },
+            new() { code = 363, tariff_name = "Express lite warehouse-parcel terminal" },
+            new() { code = 480, tariff_name = "Express door-door" },
+            new() { code = 481, tariff_name = "Express door-warehouse" },
+            new() { code = 482, tariff_name = "Express warehouse-door" },
+            new() { code = 483, tariff_name = "Express warehouse–warehouse" },
+            new() { code = 485, tariff_name = "Express door–parcel terminal" },
+            new() { code = 486, tariff_name = "Express warehouse–parcel terminal" },
+        };
+
+        Services = new List<Service>
+        {
+            new() { code = "INSURANCE" },
+            new() { code = "DELIV_WEEKEND" },
+            new() { code = "TAKE_SENDER" },
+            new() { code = "DELIV_RECEIVER" },
+            new() { code = "TRYING_ON" },
+            new() { code = "PART_DELIV" },
+            new() { code = "INSPECTION_CARGO" },
+            new() { code = "REVERSE" },
+            new() { code = "DANGER_CARGO" },
+            new() { code = "PACKAGE_1" },
+            new() { code = "PACKAGE_2" },
+            new() { code = "WAIT_FOR_RECEIVER" },
+            new() { code = "WAIT_FOR_SENDER" },
+            new() { code = "REPEATED_DELIVERY" },
+            new() { code = "SMS" },
+            new() { code = "GET_UP_FLOOR_BY_HAND" },
+            new() { code = "GET_UP_FLOOR_BY_ELEVATOR" },
+            new() { code = "CALL" },
+            new() { code = "THERMAL_MODE" },
+            new() { code = "COURIER_PACKAGE_A2" },
+            new() { code = "SECURE_PACKAGE_A2" },
+            new() { code = "SECURE_PACKAGE_A3" },
+            new() { code = "SECURE_PACKAGE_A4" },
+            new() { code = "SECURE_PACKAGE_A5" },
+            new() { code = "NOTIFY_ORDER_CREATED" },
+            new() { code = "NOTIFY_ORDER_DELIVERY" },
+            new() { code = "CARTON_BOX_XS" },
+            new() { code = "CARTON_BOX_S" },
+            new() { code = "CARTON_BOX_M" },
+            new() { code = "CARTON_BOX_L" },
+            new() { code = "CARTON_BOX_500GR" },
+            new() { code = "CARTON_BOX_1KG" },
+            new() { code = "CARTON_BOX_2KG" },
+            new() { code = "CARTON_BOX_3KG" },
+            new() { code = "CARTON_BOX_5KG" },
+            new() { code = "CARTON_BOX_10KG" },
+            new() { code = "CARTON_BOX_15KG" },
+            new() { code = "CARTON_BOX_20KG" },
+            new() { code = "CARTON_BOX_30KG" },
+            new() { code = "BUBBLE_WRAP" },
+            new() { code = "WASTE_PAPER" },
+            new() { code = "CARTON_FILLER" },
+            new() { code = "BAN_ATTACHMENT_INSPECTION" },
+            new() { code = "PHOTO_OF_DOCUMENTS" },
         };
 
         Request.services.Add(new Service());
@@ -179,21 +307,6 @@
             },
                 date = null!
             };
-
-        //var responseMessage = await CalculationService.CalculationByTariffCode(request);
-        //var result = JsonConvert.DeserializeObject<CalculationByTariffCodeResponse>(await responseMessage.Content.ReadAsStringAsync());
-
-        //if (result?.errors != null)
-        //{
-        //    for (int i = 0; i < result.errors.Count; i++)
-        //    {
-        //        await MessageService.Error(string.Join(';', result.errors[i].message));
-        //    }
-        //}
-        //else
-        //{
-        //    await MessageService.Info($"Общая стоимость заказа: {result.total_sum}");
-        //}
     }
 
     private async Task SendCalculationByTariffCodeRequest()
