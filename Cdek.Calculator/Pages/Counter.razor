@@ -1,0 +1,243 @@
+﻿@page "/counter"
+@using Cdek.Calculator.Services
+@using Cdek.Application.Entities
+@using Newtonsoft.Json
+
+<PageTitle>Калькулятор</PageTitle>
+
+<h1>Калькулятор. Расчет по коду тарифа</h1>
+
+<Form Model="@Request">
+    <FormItem Label="Тип заказа">
+        <Select Mode="default"
+                DataSource="@_types"
+                TItem="OrderType"
+                TItemValue="int"
+                @bind-Value="@context.type"
+                LabelName="@nameof(OrderType.Name)"
+                ValueName="@nameof(OrderType.Id)"
+                IgnoreItemChanges="false">
+        </Select>
+    </FormItem>
+    <FormItem Label="Дополнительный тип заказа">
+        <Select Mode="multiple"
+                Placeholder="Выберите дополнительные типы заказа"
+                DataSource="@AdditionalOrderTypes"
+                @bind-Values="@context.additional_order_types"
+                LabelName="@nameof(OrderType.Name)"
+                ValueName="@nameof(OrderType.Id)"
+                TItemValue="int"
+                TItem="OrderType"
+                EnableSearch
+                EnableVirtualization>
+        </Select>
+    </FormItem>
+    <FormItem Label="Валюта договора">
+        <Input @bind-Value="@context.currency" />
+    </FormItem>
+    <FormItem Label="Код тарифа">
+        <Input @bind-Value="@context.tariff_code" />
+    </FormItem>
+    <FormItem Label="Адрес отправления" />
+    <FormItem Label="Код населенного пункта СДЭК">
+        <Input @bind-Value="@context.from_location.code" />
+    </FormItem>
+    <FormItem Label="Почтовый индекс">
+        <Input @bind-Value="@context.from_location.postal_code" />
+    </FormItem>
+    <FormItem Label="Код страны в формате ISO_3166-1_alpha-2">
+        <Input @bind-Value="@context.from_location.country_code" />
+    </FormItem>
+    <FormItem Label="Название города">
+        <Input @bind-Value="@context.from_location.city" />
+    </FormItem>
+    <FormItem Label="Полная строка адреса">
+        <Input @bind-Value="@context.from_location.address" />
+    </FormItem>
+    <FormItem Label="Адрес получения" />
+    <FormItem Label="Код населенного пункта СДЭК">
+        <Input @bind-Value="@context.to_location.code" />
+    </FormItem>
+    <FormItem Label="Почтовый индекс">
+        <Input @bind-Value="@context.to_location.postal_code" />
+    </FormItem>
+    <FormItem Label="Код страны в формате ISO_3166-1_alpha-2">
+        <Input @bind-Value="@context.to_location.country_code" />
+    </FormItem>
+    <FormItem Label="Название города">
+        <Input @bind-Value="@context.to_location.city" />
+    </FormItem>
+    <FormItem Label="Полная строка адреса">
+        <Input @bind-Value="@context.to_location.address" />
+    </FormItem>
+    <FormItem Label="Дополнительные услуги" />
+    <FormItem Label="Тип дополнительной услуги, код из справочника доп. услуг">
+        <Input @bind-Value="@context.services[0].code" />
+    </FormItem>
+    <FormItem Label="Параметр дополнительной услуги">
+        <Input @bind-Value="@context.services[0].parameter" />
+    </FormItem>
+    <FormItem Label="Список информации по местам" />
+    <FormItem Label="Общий вес (в граммах)">
+        <Input @bind-Value="@context.packages[0].weight" />
+    </FormItem>
+    <FormItem Label="Габариты упаковки. Длина (в сантиметрах)">
+        <Input @bind-Value="@context.packages[0].length" />
+    </FormItem>
+    <FormItem Label="Габариты упаковки. Ширина (в сантиметрах)">
+        <Input @bind-Value="@context.packages[0].width" />
+    </FormItem>
+    <FormItem Label="Габариты упаковки. Высота (в сантиметрах)">
+        <Input @bind-Value="@context.packages[0].height" />
+    </FormItem>
+    <GridRow Align="center">
+        <GridCol Span="2">
+            <FormItem>
+                <div>
+                    <Button Type="@ButtonType.Primary" @onclick="SendCalculationByTariffCodeRequest" style="background-color: #158e3a">Отправить</Button>
+                </div>
+            </FormItem>
+        </GridCol>
+        <GridCol Span="2">
+            <FormItem>
+                <div>
+                    <Button Type="@ButtonType.Default" @onclick="ClearButton">Отмена</Button>
+                </div>
+            </FormItem>
+        </GridCol>
+    </GridRow>
+</Form>
+
+@code {
+    [Inject]
+    private ICalculationService CalculationService { get; set; } = null!;
+
+    [Inject]
+    private ICdekAuthorization CdekAuthorization { get; set; } = null!;
+
+    [Inject]
+    private ITokenStorage TokenStorage { get; set; } = null!;
+
+    [Inject]
+    private IMessageService MessageService { get; set; } = null!;
+
+    private List<OrderType>? _types;
+
+    private CalculationByTariffCodeRequest Request { get; set; } = new();
+
+    private IEnumerable<OrderType>? AdditionalOrderTypes { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _types = new List<OrderType>
+        {
+            new() { Id = 1, Name = "интернет-магазин" },
+            new() { Id = 2, Name = "доставка" }
+        };
+
+        AdditionalOrderTypes = new List<OrderType>
+        {
+            new() { Id = 2, Name = "для сборного груза (LTL)" },
+            new() { Id = 4, Name = "для Forward"},
+            new() { Id = 6, Name = "для Фулфилмент. Приход"},
+            new() { Id = 7, Name = "для Фулфилмент. Отгрузка}"}
+        };
+
+        Request.services.Add(new Service());
+        Request.packages.Add(new Package());
+
+        var token = await CdekAuthorization.GetAccessToken();
+        TokenStorage.token = token;
+
+        Request = new CalculationByTariffCodeRequest
+            {
+                currency = 1,
+                tariff_code = 136,
+                from_location = new Location
+                {
+                    code = 270
+                },
+                to_location = new Location
+                {
+                    code = 44
+                },
+                type = 1,
+                services = new List<Service>{ new()
+            {
+                code = "INSURANCE",
+                parameter = "2"
+            }},
+                packages = new List<Package>
+            {
+                new()
+                {
+                    height = 10,
+                    length = 10,
+                    weight = 4000,
+                    width = 10
+                }
+            },
+                date = null!
+            };
+
+        //var responseMessage = await CalculationService.CalculationByTariffCode(request);
+        //var result = JsonConvert.DeserializeObject<CalculationByTariffCodeResponse>(await responseMessage.Content.ReadAsStringAsync());
+
+        //if (result?.errors != null)
+        //{
+        //    for (int i = 0; i < result.errors.Count; i++)
+        //    {
+        //        await MessageService.Error(string.Join(';', result.errors[i].message));
+        //    }
+        //}
+        //else
+        //{
+        //    await MessageService.Info($"Общая стоимость заказа: {result.total_sum}");
+        //}
+    }
+
+    private async Task SendCalculationByTariffCodeRequest()
+    {
+        var responseMessage = await CalculationService.CalculationByTariffCode(Request);
+        var result = JsonConvert.DeserializeObject<CalculationByTariffCodeResponse>(await responseMessage.Content.ReadAsStringAsync());
+
+        if (result?.errors != null)
+        {
+            for (int i = 0; i < result.errors.Count; i++)
+            {
+                await MessageService.Error(string.Join(';', result.errors[i].message));
+            }
+        }
+        else
+        {
+            await MessageService.Info($"Общая стоимость заказа: {result.total_sum}");
+        }
+        Request = new CalculationByTariffCodeRequest()
+            {
+                additional_order_types = new List<int>(),
+                from_location = new Location(),
+                packages = new List<Package>(),
+                services = new List<Service>(),
+                to_location = new Location()
+            };
+        Request.services.Add(new Service());
+        Request.packages.Add(new Package());
+        StateHasChanged();
+    }
+
+    private void ClearButton()
+    {
+        Request = new CalculationByTariffCodeRequest()
+            {
+                additional_order_types = new List<int>(),
+                from_location = new Location(),
+                packages = new List<Package>(),
+                services = new List<Service>(),
+                to_location = new Location()
+            };
+        Request.services.Add(new Service());
+        Request.packages.Add(new Package());
+        StateHasChanged();
+    }
+
+}
